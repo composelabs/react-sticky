@@ -1,5 +1,5 @@
 {
-  "name": "react-sticky",
+  "name": "react-sticky-cl",
   "version": "5.0.5",
   "description": "Sticky component for React",
   "main": "lib/index.js",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/captivationsoftware/react-sticky"
+    "url": "https://github.com/composelabs/react-sticky"
   },
   "keywords": [
     "react-component",
@@ -23,9 +23,9 @@
   "author": "Captivation Software",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/captivationsoftware/react-sticky/issues"
+    "url": "https://github.com/composelabs/react-sticky/issues"
   },
-  "homepage": "https://github.com/captivationsoftware/react-sticky",
+  "homepage": "https://github.com/composelabs/react-sticky",
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0",
     "react-dom": "^0.14.0 || ^15.0.0"
