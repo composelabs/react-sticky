@@ -52,7 +52,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -80,9 +80,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.Channel = _channel2.default;
 	exports.default = _sticky2.default;
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -118,21 +118,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Channel;
 	module.exports = exports['default'];
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_3__;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -168,11 +168,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function Container(props) {
 	    _classCallCheck(this, Container);
 
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Container).call(this, props));
+	    var _this = _possibleConstructorReturn(this, (Container.__proto__ || Object.getPrototypeOf(Container)).call(this, props));
 
 	    _this.updateOffset = function (_ref) {
-	      var inherited = _ref.inherited;
-	      var offset = _ref.offset;
+	      var inherited = _ref.inherited,
+	          offset = _ref.offset;
 
 	      _this.channel.update(function (data) {
 	        data.inherited = inherited + offset;
@@ -235,9 +235,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Container;
 	module.exports = exports['default'];
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -273,11 +273,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  function Sticky(props) {
 	    _classCallCheck(this, Sticky);
 
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Sticky).call(this, props));
+	    var _this = _possibleConstructorReturn(this, (Sticky.__proto__ || Object.getPrototypeOf(Sticky)).call(this, props));
 
 	    _this.updateContext = function (_ref) {
-	      var inherited = _ref.inherited;
-	      var node = _ref.node;
+	      var inherited = _ref.inherited,
+	          node = _ref.node;
 
 	      _this.containerNode = node;
 	      _this.setState({
@@ -287,6 +287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 
 	    _this.recomputeState = function () {
+	      if (_this.props.isDisabled) return;
 	      var isSticky = _this.isSticky();
 	      var height = _this.getHeight();
 	      var width = _this.getWidth();
@@ -453,15 +454,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        style = _extends({}, style, _stickyStyle, this.props.stickyStyle);
 	      }
 
-	      var _props = this.props;
-	      var topOffset = _props.topOffset;
-	      var isActive = _props.isActive;
-	      var stickyClassName = _props.stickyClassName;
-	      var stickyStyle = _props.stickyStyle;
-	      var bottomOffset = _props.bottomOffset;
-	      var onStickyStateChange = _props.onStickyStateChange;
-
-	      var props = _objectWithoutProperties(_props, ['topOffset', 'isActive', 'stickyClassName', 'stickyStyle', 'bottomOffset', 'onStickyStateChange']);
+	      var _props = this.props,
+	          topOffset = _props.topOffset,
+	          isActive = _props.isActive,
+	          stickyClassName = _props.stickyClassName,
+	          stickyStyle = _props.stickyStyle,
+	          bottomOffset = _props.bottomOffset,
+	          onStickyStateChange = _props.onStickyStateChange,
+	          props = _objectWithoutProperties(_props, ['topOffset', 'isActive', 'stickyClassName', 'stickyStyle', 'bottomOffset', 'onStickyStateChange']);
 
 	      return _react2.default.createElement(
 	        'div',
@@ -505,7 +505,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.default = Sticky;
 	module.exports = exports['default'];
 
-/***/ }
+/***/ })
 /******/ ])
 });
 ;

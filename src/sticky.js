@@ -95,6 +95,7 @@ export default class Sticky extends React.Component {
   }
 
   recomputeState = () => {
+    if(this.props.isDisabled) return
     const isSticky = this.isSticky();
     const height = this.getHeight();
     const width = this.getWidth();
