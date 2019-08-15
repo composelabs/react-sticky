@@ -1,113 +1,127 @@
-react-sticky [![Build Status](https://travis-ci.org/captivationsoftware/react-sticky.svg?branch=master)](https://travis-ci.org/captivationsoftware/react-sticky)
-============
-The most powerful Sticky library available for React!
+# react-sticky [![Build Status](https://travis-ci.org/captivationsoftware/react-sticky.svg?branch=master)](https://travis-ci.org/captivationsoftware/react-sticky)
 
-#### Captivation Software is hiring ES6/React developers!
-- Must be located in the Baltimore, MD/Washington, DC area
-- If interested, send your resume and/or a link to your github profile to jobs@captivationsoftware.com
+Make your React components sticky!
 
 #### Demos
-  - [Basic](http://rawgit.com/captivationsoftware/react-sticky/master/examples/basic/index.html)
-  - [Timeline](http://rawgit.com/captivationsoftware/react-sticky/master/examples/timeline/index.html)
 
-#### Highlights
-  - Fully-nestable, allowing you to build awesome layouts with familiar syntax
-  - Sane defaults so you spend less time configuring
-  - Allows multiple Sticky elements on the page at once with compositional awareness!
+* [Basic](http://react-sticky.netlify.com/#/basic)
+* [Relative](http://react-sticky.netlify.com/#/relative)
+* [Stacked](http://react-sticky.netlify.com/#/stacked)
+
+#### Version 6.x Highlights
+
+* Completely redesigned to support sticky behavior via higher-order component, giving you ultimate control of implementation details
+* Features a minimal yet efficient API
+* Drops support for versions of React < 15.3. If you are using an earlier version of React, continue to use the 5.x series
+
+#### CSS
+There's a CSS alternative to `react-sticky`: the `position: sticky` feature. However it currently does not have [full browser support](https://caniuse.com/#feat=css-sticky), specifically a lack of IE11 support and some bugs with table elements. Before using `react-sticky`, check to see if the browser support and restrictions prevent you from using `position: sticky`, as CSS will always be faster and more durable than a JS implementation.
+```css
+position: -webkit-sticky;
+position: sticky;
+top: 0;
+```
 
 ## Installation
+
 ```sh
 npm install react-sticky
 ```
 
-Tip: run `npm build` to build the compressed UMD version suitable for inclusion via CommonJS, AMD, and even good old fashioned `<script>` tags (available as `ReactSticky`).
-
 ## Overview & Basic Example
 
-It all starts with a `<StickyContainer />`. This is basically a plain ol' `<div />` with a React-managed `padding-top` css attribute. As you scroll down the page, all `<Sticky />` tags within
-will be constrained to the bounds of its closest `<StickyContainer />` parent.
+The goal of `react-sticky` is make it easier for developers to build UIs that have sticky elements. Some examples include a sticky navbar, or a two-column layout where the left side sticks while the right side scrolls.
 
-The elements you actually want to "stick" should be wrapped in the `<Sticky />` tag. The full list of props are available below, but typical usage will look something like so:
+`react-sticky` works by calculating the position of a `<Sticky>` component relative to a `<StickyContainer>` component. If it would be outside the viewport, the styles required to affix it to the top of the screen are passed as an argument to a render callback, a function passed as a child.
 
-app.jsx
+```js
+<StickyContainer>
+  <Sticky>{({ style }) => <h1 style={style}>Sticky element</h1>}</Sticky>
+</StickyContainer>
+```
+
+The majority of use cases will only need the style to pass to the DOM, but some other properties are passed for advanced use cases:
+
+* `style` _(object)_ - modifiable style attributes to optionally be passed to the element returned by this function. For many uses, this will be the only attribute needed.
+* `isSticky` _(boolean)_ - is the element sticky as a result of the current event?
+* `wasSticky` _(boolean)_ - was the element sticky prior to the current event?
+* `distanceFromTop` _(number)_ - number of pixels from the top of the `Sticky` to the nearest `StickyContainer`'s top
+* `distanceFromBottom` _(number)_ - number of pixels from the bottom of the `Sticky` to the nearest `StickyContainer`'s bottom
+* `calculatedHeight` _(number)_ - height of the element returned by this function
+
+The `Sticky`'s child function will be called when events occur in the parent `StickyContainer`,
+and will serve as the callback to apply your own logic and customizations, with sane `style` attributes
+to get you up and running quickly.
+
+### Full Example
+
+Here's an example of all of those pieces together:
+
+app.js
+
 ```js
 import React from 'react';
 import { StickyContainer, Sticky } from 'react-sticky';
-...
+// ...
 
-class App extends React.Component ({
+class App extends React.Component {
   render() {
     return (
-      ...
       <StickyContainer>
-        ...
+        {/* Other elements can be in between `StickyContainer` and `Sticky`,
+        but certain styles can break the positioning logic used. */}
         <Sticky>
-          <header>
-            ...
-          </header>
+          {({
+            style,
+
+            // the following are also available but unused in this example
+            isSticky,
+            wasSticky,
+            distanceFromTop,
+            distanceFromBottom,
+            calculatedHeight
+          }) => (
+            <header style={style}>
+              {/* ... */}
+            </header>
+          )}
         </Sticky>
-        ...
+        {/* ... */}
       </StickyContainer>
-      ...
     );
   },
-});
-
+};
 ```
 
-When the "stickiness" becomes activated, the following inline style rules are applied to the Sticky element:
-
-```css
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: < width is inherited from the closest StickyContainer >
-```
-Note that the calculation of the Sticky element's height does not currently take margins into account. If you have margins on this element it may result in unexpected behavior.
+When the "stickiness" becomes activated, the arguments to the sticky function
+are modified. Similarly, when deactivated, the arguments will update accordingly.
 
 ### `<StickyContainer />` Props
 
-`<StickyContainer />` passes along all props you provide to it without interference. That's right - no restrictions - go nuts!  
+`<StickyContainer />` supports all valid `<div />` props.
 
 ### `<Sticky />` Props
 
-#### stickyStyle _(default: {})_
-In the event that you wish to override the style rules applied, simply pass in the style object as a prop:
+#### relative _(default: false)_
 
-app.jsx
-```js
-<StickyContainer>
-  <Sticky stickyStyle={customStyleObject}>
-    <header />
-  </Sticky>
-</StickyContainer>
-```
+Set `relative` to `true` if the `<Sticky />` element will be rendered within
+an overflowing `<StickyContainer />` (e.g. `style={{ overflowY: 'auto' }}`) and you want
+the `<Sticky />` behavior to react to events only within that container.
 
-Note: You likely want to avoid messing with the following attributes in your stickyStyle: `left`, `top`, and `width`.
-
-#### stickyClassName _(default: 'sticky')_
-You can also specify a class name to be applied when the element becomes sticky:
-
-app.jsx
-```js
-<StickyContainer>
-  ...
-  <Sticky stickyClassName={customClassName}>
-    <header />
-  </Sticky>
-  ...
-</StickyContainer>
-```
+When in `relative` mode, `window` events will not trigger sticky state changes. Only scrolling
+within the nearest `StickyContainer` can trigger sticky state changes.
 
 #### topOffset _(default: 0)_
+
 Sticky state will be triggered when the top of the element is `topOffset` pixels from the top of the closest `<StickyContainer />`. Positive numbers give the impression of a lazy sticky state, whereas negative numbers are more eager in their attachment.
 
-app.jsx
+app.js
+
 ```js
 <StickyContainer>
   ...
   <Sticky topOffset={80}>
-    <SomeChild />
+    { props => (...) }
   </Sticky>
   ...
 </StickyContainer>
@@ -115,80 +129,60 @@ app.jsx
 
 The above would result in an element that becomes sticky once its top is greater than or equal to 80px away from the top of the `<StickyContainer />`.
 
-
 #### bottomOffset _(default: 0)_
+
 Sticky state will be triggered when the bottom of the element is `bottomOffset` pixels from the bottom of the closest `<StickyContainer />`.
 
-app.jsx
+app.js
+
 ```js
 <StickyContainer>
   ...
   <Sticky bottomOffset={80}>
-    <SomeChild />
+    { props => (...) }
   </Sticky>
   ...
 </StickyContainer>
 ```
 
+The above would result in an element that ceases to be sticky once its bottom is 80px away from the bottom of the `<StickyContainer />`.
 
-#### className _(default: '')_
-You can specify a class name that would be applied to the resulting element:
+#### disableCompensation _(default: false)_
 
-app.jsx
+Set `disableCompensation` to `true` if you do not want your `<Sticky />` to apply padding to
+a hidden placeholder `<div />` to correct "jumpiness" as attachment changes from `position:fixed`
+and back.
+
+app.js
+
 ```js
 <StickyContainer>
   ...
-  <Sticky className={className}>
-    <header />
+  <Sticky disableCompensation>
+    { props => (...) }
   </Sticky>
   ...
 </StickyContainer>
 ```
 
-#### style _(default: {})_
-You can also specify a style object that would be applied to the resulting element:
+#### disableHardwareAcceleration _(default: false)_
 
-app.jsx
+When `disableHardwareAcceleration` is set to `true`, the `<Sticky />` element will not use hardware acceleration (e.g. `transform: translateZ(0)`). This setting is not recommended as it negatively impacts
+the mobile experience, and can usually be avoided by improving the structure of your DOM.
+
+app.js
+
 ```js
 <StickyContainer>
   ...
-  <Sticky style={{background: 'red'}}>
-    <header />
+  <Sticky disableHardwareAcceleration>
+    { props => (...) }
   </Sticky>
-</StickyContainer>
-```
-
-Note: In the event that `stickyStyle` rules conflict with `style` rules, `stickyStyle` rules take precedence ONLY while sticky state is active.
-
-#### onStickyStateChange _(default: function() {})_
-
-Use the onStickyStateChange prop to fire a callback function when the sticky state changes:
-
-app.jsx
-```js
-<StickyContainer>
-  ...
-  <Sticky onStickyStateChange={this.handleStickyStateChange}>
-    <header />
-  </Sticky
   ...
 </StickyContainer>
 ```
 
-#### isActive _(default: true)_
+## FAQ
 
-Use the isActive prop to manually turn sticky on or off:
-
-app.jsx
-```js
-<StickyContainer>
-  ...
-  <Sticky isActive={false}>
-    <header />
-  </Sticky
-  ...
-</StickyContainer>
-```
-
-### License
-MIT
+### I get errors while using React.Fragments
+React.Fragments does not correspond to an actual DOM node, so `react-sticky` can not calculate its position. Because of this, React.Fragments is not supported.
