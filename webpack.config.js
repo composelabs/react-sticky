@@ -1,32 +1,47 @@
-const path = require("path");
-const webpack = require("webpack");
+'use strict';
 
-const isLive = process.env.NODE_ENV === "production";
+var webpack = require('webpack');
+
+var plugins = [
+  new webpack.DefinePlugin({
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+  }),
+  new webpack.optimize.OccurenceOrderPlugin()
+];
+
+if (process.env.NODE_ENV === 'production') {
+  plugins.push(
+    new webpack.optimize.UglifyJsPlugin({
+      compressor: {
+        screw_ie8: true,
+        warnings: false
+      }
+    })
+  );
+}
 
 module.exports = {
-  mode: isLive ? "production" : "development",
-  devtool: isLive ? "source-map" : "cheap-eval-source-map",
-  entry: {
-    demos: path.resolve("examples", "index.js")
-  },
   output: {
-    path: path.join(__dirname, "examples"),
-    filename: "bundle.js"
+    library: 'ReactSticky',
+    libraryTarget: 'umd'
   },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: "babel-loader"
-      }
-    ]
+  externals: {
+    "react": {
+      root: "React",
+      commonjs2: "react",
+      commonjs: "react",
+      amd: "react"
+    },
+    "react-dom": {
+      root: "ReactDOM",
+      commonjs2: "react-dom",
+      commonjs: "react-dom",
+      amd: "react-dom"
+    }
+
   },
-  devServer: {
-    contentBase: path.join(__dirname, "examples"),
-    publicPath: "/",
-    compress: true,
-    port: 9000,
-    historyApiFallback: true
+  plugins: plugins,
+  resolve: {
+    extensions: ['', '.js']
   }
 };

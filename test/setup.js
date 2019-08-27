@@ -1,24 +1,22 @@
-require("@babel/register")();
+// setup.js should be required/imported at the very top over every test suit file.
+// technically only required for tests importing React, but making a habit to
+// import at top of every file not a bad thing, and there may come to be other 'things'
+// that need to run before any tests to setup the environment, that aren't specific to React
 
-const jsdom = require("jsdom").jsdom;
+import { jsdom } from 'jsdom';
 
-const exposedProperties = ["window", "navigator", "document"];
-
-global.document = jsdom("");
+// Initialize jsdom and set global document, window, and navigator.
+// globals must be set BEFORE THE FIRST require('react'), or in some cases React can throw:
+//   "
+//      Invariant Violation: dangerouslyReplaceNodeWithMarkup(...): Cannot render markup in a
+//      worker thread. Make sure `window` and `document` are available globally before requiring
+//      React when unit testing or use ReactDOMServer.renderToString() for server rendering.
+//   "
+//
+// This was resolved by finding similar issue and solutions at:
+//     https://github.com/airbnb/enzyme/issues/58
+// and https://github.com/tmpvar/jsdom/issues/1352
+global.document = jsdom('<body></body>');
 global.window = document.defaultView;
-Object.keys(document.defaultView).forEach(property => {
-  if (typeof global[property] === "undefined") {
-    exposedProperties.push(property);
-    global[property] = document.defaultView[property];
-  }
-});
+global.navigator = window.navigator;
 
-global.navigator = {
-  userAgent: "node.js"
-};
-
-documentRef = document;
-
-const mount = document.createElement("div");
-mount.id = "mount";
-document.body.appendChild(mount);

@@ -1,136 +1,208 @@
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-import PropTypes from "prop-types";
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-export default class Sticky extends Component {
+export default class Sticky extends React.Component {
+
   static propTypes = {
-    topOffset: PropTypes.number,
-    bottomOffset: PropTypes.number,
-    relative: PropTypes.bool,
-    children: PropTypes.func.isRequired
-  };
+    isActive: React.PropTypes.bool,
+    className: React.PropTypes.string,
+    style: React.PropTypes.object,
+    stickyClassName: React.PropTypes.string,
+    stickyStyle: React.PropTypes.object,
+    topOffset: React.PropTypes.number,
+    bottomOffset: React.PropTypes.number,
+    onStickyStateChange: React.PropTypes.func
+  }
 
   static defaultProps = {
-    relative: false,
+    isActive: true,
+    className: '',
+    style: {},
+    stickyClassName: 'sticky',
+    stickyStyle: {},
     topOffset: 0,
     bottomOffset: 0,
-    disableCompensation: false,
-    disableHardwareAcceleration: false
-  };
+    onStickyStateChange: () => {}
+  }
 
   static contextTypes = {
-    subscribe: PropTypes.func,
-    unsubscribe: PropTypes.func,
-    getParent: PropTypes.func
-  };
+    'sticky-channel': React.PropTypes.any
+  }
 
-  state = {
-    isSticky: false,
-    wasSticky: false,
-    style: {}
-  };
+  constructor(props) {
+    super(props);
+    this.state = {};
+  }
 
   componentWillMount() {
-    if (!this.context.subscribe)
-      throw new TypeError(
-        "Expected Sticky to be mounted within StickyContainer"
-      );
+    this.channel = this.context['sticky-channel'];
+    this.channel.subscribe(this.updateContext);
+  }
 
-    this.context.subscribe(this.handleContainerEvent);
+  componentDidMount() {
+    this.on(['resize', 'scroll', 'touchstart', 'touchmove', 'touchend', 'pageshow', 'load'], this.recomputeState);
+    this.recomputeState();
+  }
+
+  componentWillReceiveProps() {
+    this.recomputeState();
   }
 
   componentWillUnmount() {
-    this.context.unsubscribe(this.handleContainerEvent);
+    this.off(['resize', 'scroll', 'touchstart', 'touchmove', 'touchend', 'pageshow', 'load'], this.recomputeState);
+    this.channel.unsubscribe(this.updateContext);
   }
 
-  componentDidUpdate() {
-    this.placeholder.style.paddingBottom = this.props.disableCompensation
-      ? 0
-      : `${this.state.isSticky ? this.state.calculatedHeight : 0}px`;
+  getXOffset() {
+    return this.refs.placeholder.getBoundingClientRect().left;
   }
 
-  handleContainerEvent = ({
-    distanceFromTop,
-    distanceFromBottom,
-    eventSource
-  }) => {
-    const parent = this.context.getParent();
+  getWidth() {
+    return this.refs.placeholder.getBoundingClientRect().width;
+  }
 
-    let preventingStickyStateChanges = false;
-    if (this.props.relative) {
-      preventingStickyStateChanges = eventSource !== parent;
-      distanceFromTop =
-        -(eventSource.scrollTop + eventSource.offsetTop) +
-        this.placeholder.offsetTop;
-    }
+  getHeight() {
+    return ReactDOM.findDOMNode(this.refs.children).getBoundingClientRect().height;
+  }
 
-    const placeholderClientRect = this.placeholder.getBoundingClientRect();
-    const contentClientRect = this.content.getBoundingClientRect();
-    const calculatedHeight = contentClientRect.height;
+  getDistanceFromTop() {
+    return this.refs.placeholder.getBoundingClientRect().top;
+  }
 
-    const bottomDifference =
-      distanceFromBottom - this.props.bottomOffset - calculatedHeight;
+  getDistanceFromBottom() {
+    if (!this.containerNode) return 0;
+    return this.containerNode.getBoundingClientRect().bottom;
+  }
 
-    const wasSticky = !!this.state.isSticky;
-    const isSticky = preventingStickyStateChanges
-      ? wasSticky
-      : distanceFromTop <= -this.props.topOffset &&
-        distanceFromBottom > -this.props.bottomOffset;
+  isSticky() {
+    if (!this.props.isActive) return false;
 
-    distanceFromBottom =
-      (this.props.relative
-        ? parent.scrollHeight - parent.scrollTop
-        : distanceFromBottom) - calculatedHeight;
+    const fromTop = this.getDistanceFromTop();
+    const fromBottom = this.getDistanceFromBottom();
 
-    const style = !isSticky
-      ? {}
-      : {
-          position: "fixed",
-          top:
-            bottomDifference > 0
-              ? this.props.relative
-                ? parent.offsetTop - parent.offsetParent.scrollTop
-                : 0
-              : bottomDifference,
-          left: placeholderClientRect.left,
-          width: placeholderClientRect.width
-        };
+    const topBreakpoint = this.state.containerOffset - this.props.topOffset;
+    const bottomBreakpoint = this.state.containerOffset + this.props.bottomOffset;
 
-    if (!this.props.disableHardwareAcceleration) {
-      style.transform = "translateZ(0)";
-    }
+    return fromTop <= topBreakpoint && fromBottom >= bottomBreakpoint;
+  }
 
+  updateContext = ({ inherited, node }) => {
+    this.containerNode = node;
     this.setState({
-      isSticky,
-      wasSticky,
-      distanceFromTop,
-      distanceFromBottom,
-      calculatedHeight,
-      style
+      containerOffset: inherited,
+      distanceFromBottom: this.getDistanceFromBottom()
     });
-  };
+  }
 
-  render() {
-    const element = React.cloneElement(
-      this.props.children({
-        isSticky: this.state.isSticky,
-        wasSticky: this.state.wasSticky,
-        distanceFromTop: this.state.distanceFromTop,
-        distanceFromBottom: this.state.distanceFromBottom,
-        calculatedHeight: this.state.calculatedHeight,
-        style: this.state.style
-      }),
-      {
-        ref: content => {
-          this.content = ReactDOM.findDOMNode(content);
-        }
+  recomputeState = () => {
+    if(this.props.isDisabled) return
+    const isSticky = this.isSticky();
+    const height = this.getHeight();
+    const width = this.getWidth();
+    const xOffset = this.getXOffset();
+    const distanceFromBottom = this.getDistanceFromBottom();
+    const hasChanged = this.state.isSticky !== isSticky;
+
+    this.setState({ isSticky, height, width, xOffset, distanceFromBottom });
+
+    if (hasChanged) {
+      if (this.channel) {
+        this.channel.update((data) => {
+          data.offset = (isSticky ? this.state.height : 0);
+        });
       }
-    );
+
+      this.props.onStickyStateChange(isSticky);
+    }
+  }
+
+  on(events, callback) {
+    events.forEach((evt) => {
+      window.addEventListener(evt, callback);
+    });
+  }
+
+  off(events, callback) {
+    events.forEach((evt) => {
+      window.removeEventListener(evt, callback);
+    });
+  }
+
+  shouldComponentUpdate(newProps, newState) {
+    // Have we changed the number of props?
+    const propNames = Object.keys(this.props);
+    if (Object.keys(newProps).length != propNames.length) return true;
+
+    // Have we changed any prop values?
+    const valuesMatch = propNames.every((key) => {
+      return newProps.hasOwnProperty(key) && newProps[key] === this.props[key];
+    });
+    if (!valuesMatch) return true;
+
+    // Have we changed any state that will always impact rendering?
+    const state = this.state;
+    if (newState.isSticky !== state.isSticky) return true;
+
+    // If we are sticky, have we changed any state that will impact rendering?
+    if (state.isSticky) {
+      if (newState.height !== state.height) return true;
+      if (newState.width !== state.width) return true;
+      if (newState.xOffset !== state.xOffset) return true;
+      if (newState.containerOffset !== state.containerOffset) return true;
+      if (newState.distanceFromBottom !== state.distanceFromBottom) return true;
+    }
+
+    return false;
+  }
+
+  /*
+   * The special sauce.
+   */
+  render() {
+    const placeholderStyle = { paddingBottom: 0 };
+    let className = this.props.className;
+
+    // To ensure that this component becomes sticky immediately on mobile devices instead
+    // of disappearing until the scroll event completes, we add `transform: translateZ(0)`
+    // to 'kick' rendering of this element to the GPU
+    // @see http://stackoverflow.com/questions/32875046
+    let style = Object.assign({}, { transform: 'translateZ(0)' }, this.props.style);
+
+    if (this.state.isSticky) {
+      const stickyStyle = {
+        position: 'fixed',
+        top: this.state.containerOffset,
+        left: this.state.xOffset,
+        width: this.state.width
+      };
+
+      const bottomLimit = this.state.distanceFromBottom - this.state.height - this.props.bottomOffset;
+      if (this.state.containerOffset > bottomLimit) {
+        stickyStyle.top = bottomLimit;
+      }
+
+      placeholderStyle.paddingBottom = this.state.height;
+
+      className += ` ${this.props.stickyClassName}`;
+      style = Object.assign({}, style, stickyStyle, this.props.stickyStyle);
+    }
+
+    const {
+      topOffset,
+      isActive,
+      stickyClassName,
+      stickyStyle,
+      bottomOffset,
+      onStickyStateChange,
+      ...props
+    } = this.props;
 
     return (
       <div>
-        <div ref={placeholder => (this.placeholder = placeholder)} />
-        {element}
+        <div ref="placeholder" style={placeholderStyle}></div>
+        <div {...props} ref="children" className={className} style={style}>
+          {this.props.children}
+        </div>
       </div>
     );
   }
